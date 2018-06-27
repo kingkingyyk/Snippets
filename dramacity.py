@@ -19,6 +19,7 @@ class Drama:
 def download_drama(url):
 	options = Options()
 	options.add_argument('--log-level=3')
+	options.add_experimental_option( "prefs",{'profile.managed_default_content_settings.javascript': 2})
 	with Browser('chrome', headless=True, options=options) as browser:
 	    print('Loading '+url)
 	    browser.visit(url)
@@ -33,7 +34,11 @@ def download_drama(url):
 	    video_window_url = browser.find_by_xpath('/html/body/iframe[1]').first['src']
 	    browser.visit(video_window_url)
 	    openload_url = browser.find_by_xpath('/html/body/div[3]/a[1]').first['href']
-	    
+	    browser.quit()
+
+	options = Options()
+	options.add_argument('--log-level=3')
+	with Browser('chrome', headless=True, options=options) as browser:	    
 	    print('Loading openload.co....')
 	    browser.visit(openload_url)
 	    #Click small download button
@@ -46,6 +51,7 @@ def download_drama(url):
 
 	    direct_url = browser.find_by_xpath('//*[@id="realdl"]/a').first['href']
 	    print('Download link found! '+direct_url)
+	    browser.quit()
 	    webbrowser.open_new_tab(direct_url)
 
 
