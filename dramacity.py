@@ -19,8 +19,8 @@ class Drama:
 def download_drama(url):
 	options = Options()
 	options.add_argument('--log-level=3')
-	options.add_experimental_option( "prefs",{'profile.managed_default_content_settings.javascript': 2})
-	with Browser('chrome', headless=True, options=options) as browser:
+	options.add_experimental_option( "prefs",{'profile.managed_default_content_settings.javascript': 2, 'profile.managed_default_content_settings.images': 2})
+	with Browser('chrome', headless=False, options=options) as browser:
 	    print('Loading '+url)
 	    browser.visit(url)
 
@@ -33,13 +33,14 @@ def download_drama(url):
 	    print('Loading micro video site...')
 	    video_window_url = browser.find_by_xpath('/html/body/iframe[1]').first['src']
 	    browser.visit(video_window_url)
-	    openload_url = browser.find_by_xpath('/html/body/div[3]/a[1]').first['href']
+	    openload_url = [x['href'] for x in browser.find_by_tag('a') if x['href'] is not None and x['href'].startswith('https://openload.co')][0]
 	    browser.quit()
 
 	options = Options()
 	options.add_argument('--log-level=3')
+	options.add_experimental_option( "prefs",{'profile.managed_default_content_settings.images': 2})
 	with Browser('chrome', headless=True, options=options) as browser:	    
-	    print('Loading openload.co....')
+	    print('Loading '+openload_url)
 	    browser.visit(openload_url)
 	    #Click small download button
 	    browser.find_by_xpath('//*[@id="btnDl"]').first.click()
