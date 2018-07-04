@@ -1,10 +1,3 @@
-"""
-Retrieve the drama download URL from dramacity.io & ask default browser to download
-Usage :
-    - dramacity.py list                     -> List the latest drama
-    - dramacity.py download --id=<number>   -> Download the drama give the id as listed in list command
-"""
-
 from splinter import Browser
 from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.options import Options
@@ -73,8 +66,8 @@ def list():
 	print('')
 	print('-------------------------------')
 	for index, drama in enumerate(drama_list):
-		print(str(index+1) + ") " + drama.name.encode("ascii", "ignore"))
-		print( "\t\t" + drama.link.encode("ascii","ignore"))
+		print(str(index+1) + ") " + str(drama.name.encode("ascii", "ignore")))
+		print( "\t\t" + str(drama.link.encode("ascii","ignore")))
 		print('-------------------------------')
 
 @click.group()
@@ -82,14 +75,16 @@ def cli_download():
 	pass
 
 @cli_download.command()
-@click.option('--id', help='ID of drama in the list.', required=True, type=int)
+@click.option('--id', help='ID of drama in the list.', required=True)
 def download(id):
 	drama_list = query_drama()
-	if id > 0 and id <= len(drama_list):
-		print('Now downloading '+drama_list[id-1].name.encode('ascii', 'ignore'))
-		download_drama(drama_list[id-1].link)
-	else:
-		print('Invalid id!')
+	ids = id.split(",")
+	for x in ids:
+		if x.isdigit() and int(x) > 0 and int(x) <= len(drama_list):
+			print('Now downloading '+str(drama_list[int(x)-1].name.encode('ascii', 'ignore')))
+			download_drama(drama_list[int(x)-1].link)
+		else:
+			print(x+'is an invalid id, will be skipped!')
 
 cli = click.CommandCollection(sources=[cli_list, cli_download])
 
