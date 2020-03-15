@@ -1,0 +1,44 @@
+cat <<EOF>> /etc/hosts
+192.168.0.242 k8s-master
+192.168.0.32 k8s-node
+EOF
+sudo setenforce 0
+sudo sed -i --follow-symlinks 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/sysconfig/selinux
+sudo systemctl stop firewalld
+sudo systemctl disable firewalld
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+sudo yum update -y
+sudo yum install kubeadm docker nano -y
+sudo systemctl enable kubelet
+sudo systemctl start kubelet
+sudo systemctl enable docker
+sudo systemctl start docker
+
+
+===master======
+sudo swapoff -a
+sudo nano /etc/sysctl.conf   --- Add net.bridge.bridge-nf-call-iptables = 1
+sudo sysctl -p
+sudo kubeadm init
+copy last line : kubeadm join 192.168.0.242:6443 --token e4v6xk.air25dnwrd7fe6yu --discovery-token-ca-cert-hash sha256:77d0c0a68ba893948d1cccb5cc7b22aaad1d5b1a64330874bddd4ac04fe1b448
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+export kubever=$(kubectl version | base64 | tr -d '\n')
+kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$kubever"
+kubectl get nodes
+
+===node=====
+sudo nano /etc/sysctl.conf   --- Add net.bridge.bridge-nf-call-iptables = 1
+sudo sysctl -p
+sudo swapoff -a
+sudo kubeadm join 192.168.0.242:6443 --token e4v6xk.air25dnwrd7fe6yu --discovery-token-ca-cert-hash sha256:77d0c0a68ba893948d1cccb5cc7b22aaad1d5b1a64330874bddd4ac04fe1b448
+(Takes around 1 min to connect)
