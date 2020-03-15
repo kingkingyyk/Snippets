@@ -1,0 +1,54 @@
+ip :
+192.168.0.185 mesos-master
+
+
+master
+======
+## sudo echo "ip_resolve=4" >> /etc/yum.conf
+sudo setenforce 0
+sudo systemctl stop firewalld.service
+sudo systemctl disable firewalld.service
+
+sudo yum update -y
+sudo yum install cyrus-sasl-md5 apr svn ntp java-1.8.0-openjdk-devel nano wget -y
+sudo rpm -Uvh https://apache.bintray.com/mesos/el7/x86_64/mesos-1.9.0-1.el7.x86_64.rpm
+sudo yum install mesos -y
+sudo mkdir -p /var/lib/mesos
+sudo chown -R mesos-master /var/lib/mesos/
+
+wget https://downloads.apache.org/zookeeper/zookeeper-3.6.0/apache-zookeeper-3.6.0-bin.tar.gz --inet4-only
+tar zxvf apache-zookeeper-3.6.0-bin.tar.gz
+cd apache-zookeeper-3.6.0-bin/conf/
+cp conf/zoo_sample.cfg conf/zoo.cfg
+nano conf/zoo.cfg //change dataDir, change dataLogDir, add server
+cd bin
+./zkServer.sh start ~/apache-zookeeper-3.6.0-bin/conf/zoo.cfg
+
+nohup mesos-master --work_dir=/var/lib/mesos --hostname=192.168.0.185 --zk=zk://192.168.0.185:2181/mesos --quorum=1 --ip=192.168.0.185 &
+
+wget http://downloads.mesosphere.com/marathon/v1.5.1/marathon-1.5.1.tgz --inet4-only
+tar zxvf marathon-1.5.1.tgz
+cd marathon-1.5.0-96-gf84298d/bin
+nohup ./marathon --hostname 192.168.0.185 --master zk://192.168.0.185:2181/mesos &
+
+
+slave
+======
+## sudo echo "ip_resolve=4" >> /etc/yum.conf
+sudo setenforce 0
+sudo systemctl stop firewalld.service
+sudo systemctl disable firewalld.service
+
+sudo yum update -y
+sudo yum install cyrus-sasl-md5 apr svn ntp java-1.8.0-openjdk-devel docker nano wget -y
+sudo rpm -Uvh https://apache.bintray.com/mesos/el7/x86_64/mesos-1.9.0-1.el7.x86_64.rpm
+sudo mkdir -p /var/lib/mesos
+sudo chown -R mesos-slave1 /var/lib/mesos/
+
+sudo yum install -y yum-utils device-mapper-persistent-data lvm2
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum install docker -y
+sudo systemctl start docker
+sudo systemctl enable docker
+
+sudo nohup mesos-slave --containerizers="mesos,docker" --work_dir=/var/lib/mesos --no-hostname_lookup --master=zk://192.168.0.185:2181/mesos --ip=192.168.0.185 &
